@@ -72,7 +72,7 @@ class RNTwilioPhone {
         })
         .catch((e) => console.log(e));
     } else {
-      RNCallKeep.registerPhoneAccount();
+      RNCallKeep.registerPhoneAccount(callKeepOptions);
       RNCallKeep.registerAndroidEvents();
       RNCallKeep.setAvailable(true);
     }

@@ -3,13 +3,13 @@ package com.reactnativetwiliophone
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.os.Bundle
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import com.twilio.voice.*
+
 
 class TwilioPhoneModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
@@ -59,10 +59,11 @@ class TwilioPhoneModule(reactContext: ReactApplicationContext) :
   fun handleMessage(payload: ReadableMap) {
     Log.i(tag, "Handling message")
 
-    val data = Bundle()
+    val data = Arguments.toBundle(payload)
 
-    for (entry in payload.entryIterator) {
-      data.putString(entry.key, entry.value as String)
+    if (data == null) {
+      Log.e(tag, "The message was not a valid Twilio Voice SDK payload")
+      return
     }
 
     val valid = Voice.handleMessage(reactApplicationContext, data, object : MessageListener {
@@ -267,6 +268,16 @@ class TwilioPhoneModule(reactContext: ReactApplicationContext) :
     permissions.putString("CALL_PHONE", callPhone)
 
     callback(permissions)
+  }
+
+  @ReactMethod
+  fun addListener(eventName: String?) {
+    // Set up any upstream listeners or background tasks as necessary
+  }
+
+  @ReactMethod
+  fun removeListeners(count: Int?) {
+    // Remove upstream listeners, stop unnecessary background tasks
   }
 
   private fun sendEvent(

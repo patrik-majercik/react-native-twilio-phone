@@ -64,7 +64,7 @@ class TwilioPhone: RCTEventEmitter {
     }
     
     @objc(handleMessage:)
-    func handleMessage(payload: [String: String]) {
+    func handleMessage(payload: [AnyHashable: Any]) {
         NSLog("[TwilioPhone] Handling message")
         
         TwilioVoiceSDK.handleNotification(payload, delegate: self, delegateQueue: nil)
@@ -122,6 +122,24 @@ class TwilioPhone: RCTEventEmitter {
             call.disconnect()
         } else {
             NSLog("[TwilioPhone] Unknown sid to perform end-call action with")
+        }
+    }
+    
+    @objc(getCallStats:resolver:rejecter:)
+    func getCallStats(callSid: String, resolve: @escaping RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+        NSLog("[TwilioPhone] Getting stats for %@", callSid)
+        
+        guard let activeCall = activeCalls[callSid] else {
+            resolve(nil)
+            return
+        }
+        
+        activeCall.getStats { stats in
+            NSLog("[TwilioPhone] Stats: %@", stats)
+            
+            resolve(stats.map({ report in
+                return report.toJSON()
+            }))
         }
     }
     
@@ -394,5 +412,28 @@ extension TwilioPhone: NotificationDelegate {
         if hasListeners {
             sendEvent(withName: "CancelledCallInvite", body: ["callSid": cancelledCallInvite.callSid])
         }
+    }
+}
+
+// MARK: - TVOStatsReport JSON serialization
+
+extension StatsReport {
+    public func toJSON() -> NSDictionary {
+        return [
+            "localAudioTrackStats": localAudioTrackStats.map({ trackStats in
+                return [
+                    "audioLevel": trackStats.audioLevel,
+                    "jitter": trackStats.jitter,
+                    "roundTripTime": trackStats.roundTripTime,
+                ]
+            }),
+            "remoteAudioTrackStats": remoteAudioTrackStats.map({ trackStats in
+                return [
+                    "audioLevel": trackStats.audioLevel,
+                    "jitter": trackStats.jitter,
+                    "mos": trackStats.mos
+                ]
+            }),
+        ]
     }
 }
